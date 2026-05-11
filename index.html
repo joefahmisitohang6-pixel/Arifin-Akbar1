@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧮 Kalkulator Premium Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --bg-primary: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            --card-bg: rgba(255, 255, 255, 0.95);
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --card-shadow: 0 30px 60px rgba(0,0,0,0.15);
+            --text-primary: #1a1a2e;
+            --text-secondary: #6c757d;
+            --accent: #00d4ff;
+            --success: #00ff88;
+            --danger: #ff4757;
+            --warning: #ffa502;
+            --percent: #ff6b35;
+            --border-radius: 24px;
+            --transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+            --card-bg: rgba(26, 26, 46, 0.95);
+            --glass-bg: rgba(26, 26, 46, 0.4);
+            --text-primary: #e8eaed;
+            --text-secondary: #a0a8b0;
+            --card-shadow: 0 30px 60px rgba(0,0,0,0.4);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            min-height: 100vh;
+            background: var(--bg-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow-x: hidden;
+            transition: var(--transition);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 420px;
+        }
+
+        .calculator {
+            background: var(--card-bg);
+            backdrop-filter: blur(25px);
+            border-radius: var(--border-radius);
+            padding: 35px;
+            box-shadow: var(--card-shadow);
+            border: 1px solid rgba(255,255,255,0.2);
+            position: relative;
+            overflow: hidden;
+            transition: var(--transition);
+        }
+
+        .calculator::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent), var(--success), var(--warning));
+            border-radius: var(--border-radius) var(--border-radius) 0 0;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 35px;
+        }
+
+        .header h1 {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.8rem;
+            font-weight: 900;
+            background: linear-gradient(45deg, var(--accent), var(--success), var(--warning));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 1px;
+        }
+
+        .theme-toggle {
+            width: 55px;
+            height: 55px;
+            border-radius: 50%;
+            background: linear-gradient(145deg, var(--accent), var(--success));
+            border: none;
+            color: white;
+            font-size: 1.3rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+            box-shadow: 0 12px 30px rgba(0, 212, 255, 0.4);
+            position: relative;
+            z-index: 10;
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.15) rotate(180deg);
+            box-shadow: 0 20px 40px rgba(0, 212, 255, 0.6);
+        }
+
+        .display {
+            background: var(--glass-bg);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 30px 25px;
+            margin-bottom: 30px;
+            border: 2px solid rgba(255,255,255,0.15);
+            min-height: 140px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 8px 32px rgba(0,0,0,0.1);
+        }
+
+        .previous-operand {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+            margin-bottom: 12px;
+            min-height: 28px;
+            opacity: 0.8;
+        }
+
+        .current-operand {
+            font-size: 2.8rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            font-family: 'Orbitron', monospace;
+            min-height: 56px;
+            word-break: break-all;
+            line-height: 1.2;
+        }
+
+        .error-message {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: var(--danger);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(255, 71, 87, 0.4);
+        }
+
+        .error-message.show {
+            opacity: 1;
+            transform: translateX(0);
+            animation: shake 0.6s ease-in-out;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-8px); }
+            40% { transform: translateX(8px); }
+            60% { transform: translateX(-4px); }
+            80% { transform: translateX(4px); }
+        }
+
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(5, 1fr);
+            gap: 18px;
+        }
+
+        button {
+            height: 75px;
+            border: none;
+            border-radius: 22px;
+            font-size: 1.6rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.12);
+            user-select: none;
+            touch-action: manipulation;
+            font-family: 'Orbitron', monospace;
+            letter-spacing: 1px;
+        }
+
+        button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s;
+        }
+
+        button:hover::before {
+            left: 100%;
+        }
+
+        .btn-number {
+            background: linear-gradient(145deg, #f8fafc, #e2e8f0);
+            color: var(--text-primary);
+            font-weight: 800;
+            font-size: 2rem;
+        }
+
+        .btn-number:hover, .btn-number:active {
+            background: linear-gradient(145deg, #e2e8f0, #cbd5e1);
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+        }
+
+        .btn-operator {
+            background: linear-gradient(145deg, var(--accent), #00b7eb);
+            color: white;
+            font-size: 2rem;
+        }
+
+        .btn-operator:hover, .btn-operator:active {
+            background: linear-gradient(145deg, #00d4ff, #00b7eb);
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 15px 35px rgba(0, 212, 255, 0.4);
+        }
+
+        .btn-percent {
+            background: linear-gradient(145deg, var(--percent), #e55a2b);
+            color: white;
+            font-size: 1.8rem;
+        }
+
+        .btn-percent:hover, .btn-percent:active {
+            background: linear-gradient(145deg, #ff6b35, #e55a2b);
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 15px 35px rgba(255, 107, 53, 0.5);
+        }
+
+        .btn-clear {
+            background: linear-gradient(145deg, var(--danger), #ff3742);
+            color: white;
+            font-size: 1.4rem;
+        }
+
+        .btn-clear:hover, .btn-clear:active {
+            background: linear-gradient(145deg, #ff4757, #ff3742);
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 15px 35px rgba(255, 71, 87, 0.5);
+        }
+
+        .btn-equals {
+            background: linear-gradient(145deg, var(--success), #00e676);
+            color: white;
+            font-size: 2.5rem;
+            font-weight: 900;
+            grid-column: 4;
+            grid-row: 4 / 6;
+        }
+
+        .btn-equals:hover, .btn-equals:active {
+            background: linear-gradient(145deg, #00ff88, #00e676);
+            transform: translateY(-6px) scale(1.05);
+            box-shadow: 0 20px 45px rgba(0, 255, 136, 0.6);
+        }
+
+        .zero {
+            grid-column: 1 / 3;
+        }
+
+        .icon {
+            font-size: 0.9rem;
+            margin-bottom: 4px;
+        }
+
+        .history-section {
+            margin-top: 30px;
+            padding: 25px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .history-title {
+            color: var(--text-primary);
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .history-list {
+            max-height: 160px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+
+        .history-item {
+            background: rgba(255,255,255,0.15);
+            padding: 14px;
+            border-radius: 16px;
+            margin-bottom: 12px;
+            font-size: 1rem;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: var(--transition);
+            border: 1px solid rgba(255,255,255,0.1);
+            font-family: 'Orbitron', monospace;
+        }
+
+        .history-item:hover {
+            background: rgba(255,255,255,0.25);
+            transform: translateX(8px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+
+        .clear-history {
+            width: 100%;
+            background: linear-gradient(145deg, var(--danger), #ff3742);
+            color: white;
+            padding: 14px;
+            border-radius: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 1rem;
+            font-family: 'Orbitron', monospace;
+            border: none;
+        }
+
+        .clear-history:hover {
+            background: linear-gradient(145deg, #ff4757, #ff3742);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(255, 71, 87, 0.4);
+        }
+
+        @media (max-width: 480px) {
+            .calculator { padding: 25px; }
+            .current-operand { font-size: 2.3rem; }
+            button { height: 65px; font-size: 1.4rem; }
+            .btn-number { font-size: 1.8rem; }
+            .header h1 { font-size: 1.5rem; }
+        }
+
+        button:active {
+            transform: scale(0.96);
+        }
+
+        .history-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .history-list::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+        }
+
+        .history-list::-webkit-scrollbar-thumb {
+            background: var(--accent);
+            border-radius: 10px;
+        }
+
+        .toast {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            background: linear-gradient(145deg, var(--success), #00e676);
+            color: white;
+            padding: 16px 24px;
+            border-radius: 25px;
+            box-shadow: 0 15px 40px rgba(0, 255, 136, 0.4);
+            z-index: 10000;
+            transform: translateX(400px);
+            transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            font-weight: 600;
+            font-family: 'Orbitron', monospace;
+            backdrop-filter: blur(10px);
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.6);
+            transform: scale(0);
+            animation: ripple-animation 0.6s linear;
+        }
+
+        @keyframes ripple-animation {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="calculator" id="calculator">
+            <div class="header">
+                <h1><i class="fas fa-calculator"></i> Kalkulator Pro</h1>
+                <button class="theme-toggle" id="themeToggle" title="Toggle Theme">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+            
+            <div class="display">
+                <div class="previous-operand" id="previousOperand"></div>
+                <div class="current-operand" id="currentOperand">0</div>
+                <div class="error-message" id="errorMessage"></div>
+            </div>
+
+            <div class="buttons">
+                <!-- Row 1 -->
+                <button class="btn-clear" id="clearBtn" title="Clear All">
+                    <i class="fas fa-trash icon"></i>C
+                </button>
+                <button class="btn-clear" id="deleteBtn" title="Delete Last">
+                    <i class="fas fa-backspace icon"></i>DEL
+                </button>
+                <button class="btn-operator" id="divideBtn" title="Divide">÷</button>
+                <button class="btn-operator" id="multiplyBtn" title="Multiply">×</button>
+
+                <!-- Row 2 -->
+                <button class="btn-number" id="num7" title="7">7</button>
+                <button class="btn-number" id="num8" title="8">8</button>
+                <button class="btn-number" id="num9" title="9">9</button>
+                <button class="btn-operator" id="subtractBtn" title="Subtract">-</button>
+
+                <!-- Row 3 -->
+                <button class="btn-number" id="num4" title="4">4</button>
+                <button class="btn-number" id="num5" title="5">5</button>
+                <button class="btn-number" id="num6" title="6">6</button>
+                <button class="btn-operator" id="addBtn" title="Add">+</button>
+
+                <!-- Row 4 -->
+                <button class="btn-number" id="num1" title="1">1</button>
+                <button class="btn-number" id="num2" title="2">2</button>
+                <button class="btn-number" id="num3" title="3">3</button>
+                <button class="btn-percent" id="percentBtn" title="Percent">
+                    <i class="fas fa-percent icon"></i>%
+                </button>
+
+                <!-- Row 5 -->
+                <button class="btn-number zero" id="num0" title="0">0</button>
+                <button class="btn-number" id="decimalBtn" title="Decimal">.</button>
+                <button class="btn-equals" id="equalsBtn" title="Equals">=</button>
+            </div>
+
+            <div class="history-section" id="historySection" style="display: none;">
+                <div class="history-title">
+                    <i class="fas fa-history"></i> Riwayat Perhitungan
+                </div>
+                <div class="history-list" id="historyList"></div>
+                <button class="clear-history" id="clearHistoryBtn">
+                    <i class="fas fa-times"></i> Hapus Semua
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class PremiumCalculator {
+            constructor() {
+                this.currentOperand = '0';
+                this.previousOperand = '';
+                this.operation = null;
+                this.waitingForNewOperand = false;
+                this.history = JSON.parse(localStorage.getItem('calcHistory')) || [];
+                
+                this.initElements();
+                this.init();
+            }
+
+            initElements() {
+                this.elements = {
+                    previousOperand: document.getElementById('previousOperand'),
+                    currentOperand: document.getElementById('currentOperand'),
+                    errorMessage: document.getElementById('errorMessage'),
+                    historySection: document.getElementById('historySection'),
+                    historyList: document.getElementById('historyList'),
+                    calculator: document.getElementById('calculator')
+                };
+            }
+
+            init() {
+                this.attachEventListeners();
+                this.loadTheme();
+                this.updateDisplay();
+                this.updateHistory();
+            }
+
+            attachEventListeners() {
+                // Numbers - FIXED: Individual event listeners
+                document.getElementById('num0').addEventListener('click', () => this.appendNumber('0'));
+                document.getElementById('num1').addEventListener('click', () => this.appendNumber('1'));
+                document.getElementById('num2').addEventListener('click', () => this.appendNumber('2'));
+                document.getElementById('num3').addEventListener('click', () => this.appendNumber('3'));
+                document.getElementById('num4').addEventListener('click', () => this.appendNumber('4'));
+                document.getElementById('num5').addEventListener('click', () => this.appendNumber('5'));
+                document.getElementById('num6').addEventListener('click', () => this.appendNumber('6'));
+                document.getElementById('num7').addEventListener('click', () => this.appendNumber('7'));
+                document.getElementById('num8').addEventListener('click', () => this.appendNumber('8'));
+                document.getElementById('num9').addEventListener('click', () => this.appendNumber('9'));
+
+                // Operations
+                document.getElementById('addBtn').addEventListener('click', () => this.selectOperation('+'));
+                document.getElementById('subtractBtn').addEventListener('click', () => this.selectOperation('-'));
+                document.getElementById('multiplyBtn').addEventListener('click', () => this.selectOperation('*'));
+                document.getElementById('divideBtn').addEventListener('click', () => this.selectOperation('/'));
+                
+                // Special functions
+                document.getElementById('percentBtn').addEventListener('click', () => this.calculatePercent());
+                document.getElementById('decimalBtn').addEventListener('click', () => this.inputDecimal());
+                document.getElementById('equalsBtn').addEventListener('click', () => this.equals());
+                document.getElementById('clearBtn').addEventListener('click', () => this.clear());
+                document.getElementById('deleteBtn').addEventListener('click', () => this.delete());
+                document.getElementById('clearHistoryBtn').addEventListener('click', () => this.clearHistory());
+                document.getElementById('themeToggle').addEventListener('click', () => this.toggleTheme());
+
+                // Keyboard support
+                document.addEventListener('keydown', (e) => this.handleKeyDown(e));
+
+                // Ripple effect
+                this.elements.calculator.addEventListener('click', (e) => {
+                    if (e.target.tagName === 'BUTTON') {
+                        this.createRipple(e.target, e);
+                    }
+                });
+            }
+
+            createRipple(element, event) {
+                const rect = element.getBoundingClientRect();
+                const size = Math.max(rect.width, rect.height);
+                const x = event.clientX - rect.left - size / 2;
+                const y = event.clientY - rect.top - size / 2;
+
+                const ripple = document.createElement('span');
+                ripple.style.width = ripple.style.height = `${size}px`;
+                ripple.style.left = `${x}px`;
+                ripple.style.top = `${y}px`;
+                ripple.classList.add('ripple');
+
+                element.appendChild(ripple);
+                setTimeout(() => ripple.remove(), 600);
+            }
+
+            appendNumber(number) {
+                console.log('Number clicked:', number); // DEBUG
+                if (this.currentOperand === '0' || this.waitingForNewOperand) {
+                    this.currentOperand = number;
+                    this.waitingForNewOperand = false;
+                } else {
+                    this.currentOperand += number;
+                }
+                this.updateDisplay();
+            }
+
+            inputDecimal() {
+                if (this.waitingForNewOperand || this.currentOperand === '0') {
+                    this.currentOperand = '0.';
+                } else if (!this.currentOperand.includes('.')) {
+                    this.currentOperand += '.';
+                }
+                this.waitingForNewOperand = false;
+                this.updateDisplay();
+            }
+
+            calculatePercent() {
+                const value = parseFloat(this.currentOperand);
+                if (!isNaN(value)) {
+                    this.currentOperand = this.formatNumber(value / 100);
+                    this.updateDisplay();
+                    this.showToast('💯 Persentase diterapkan');
+                }
+            }
+
+            selectOperation(nextOperation) {
+                if (this.operation !== null && !this.waitingForNewOperand) {
+                    this.compute();
+                } else {
+                    this.operation = nextOperation;
+                    this.previousOperand = this.currentOperand;
+                }
+                this.waitingForNewOperand = true;
+                this.updateDisplay();
+            }
+
+            compute() {
+                if (!this.operation || !this.previousOperand || !this.currentOperand) return;
+
+                const prev = parseFloat(this.previousOperand);
+                const current = parseFloat(this.currentOperand);
+
+                if (isNaN(prev) || isNaN(current)) return;
+
+                let result;
+                switch (this.operation) {
+                    case '+': result = prev + current; break;
+                    case '-': result = prev - current; break;
+                    case '*': result = prev * current; break;
+                    case '/':
+                        if (current === 0) {
+                            this.showError('❌ Tidak dapat membagi dengan nol!');
+                            return;
+                        }
+                        result = prev / current;
+                        break;
+                }
+
+                this.currentOperand = this.formatNumber(result);
+                this.operation = null;
+                this.previousOperand = '';
+                this.waitingForNewOperand = true;
+                this.addToHistory();
+                this.updateDisplay();
+            }
+
+            equals() {
+                this.compute();
+            }
+
+            clear() {
+                this.currentOperand = '0';
+                this.previousOperand = '';
+                this.operation = null;
+                this.waitingForNewOperand = false;
+                this.hideError();
+                this.updateDisplay();
+            }
+
+            delete() {
+                this.currentOperand = this.currentOperand.slice(0, -1) || '0';
+                this.updateDisplay();
+            }
+
+            updateDisplay() {
+                this.elements.currentOperand.textContent = this.currentOperand;
+                this.elements.previousOperand.textContent = 
+                    this.operation ? `${this.previousOperand} ${this.getOperationSymbol(this.operation)}` : '';
+            }
+
+            getOperationSymbol(op) {
+                const symbols = { '+': '+', '-': '-', '*': '×', '/': '÷' };
+                return symbols[op] || op;
+            }
+
+            formatNumber(num) {
+                return parseFloat(num.toPrecision(14)).toString();
+            }
+
+            showError(message) {
+                this.elements.errorMessage.textContent = message;
+                this.elements.errorMessage.classList.add('show');
+                setTimeout(() => this.hideError(), 2500);
+            }
+
+            hideError() {
+                this.elements.errorMessage.classList.remove('show');
+            }
+
+            addToHistory() {
+                const calculation = `${this.previousOperand || ''} ${this.getOperationSymbol(this.operation) || ''} ${this.currentOperand || ''} = ${this.currentOperand}`;
+                this.history.unshift(calculation);
+                if (this.history.length > 20) this.history = this.history.slice(0, 20);
+                localStorage.setItem('calcHistory', JSON.stringify(this.history));
+                this.elements.historySection.style.display = 'block';
+                this.updateHistory();
+            }
+
+            updateHistory() {
+                this.elements.historyList.innerHTML = '';
+                this.history.forEach((item, index) => {
+                    const div = document.createElement('div');
+                    div.className = 'history-item';
+                    div.innerHTML = `<strong>${index + 1}.</strong> ${item}`;
+                    div.addEventListener('click', () => {
+                        navigator.clipboard.writeText(item).then(() => {
+                            this.showToast('📋 Tersalin ke clipboard!');
+                        });
+                    });
+                    this.elements.historyList.appendChild(div);
+                });
+            }
+
+            clearHistory() {
+                this.history = [];
+                localStorage.removeItem('calcHistory');
+                this.elements.historySection.style.display = 'none';
+                this.updateHistory();
+                this.showToast('🗑️ Riwayat dihapus');
+            }
+
+            toggleTheme() {
+                const html = document.documentElement;
+                const isDark = html.getAttribute('data-theme') === 'dark';
+                
+                if (isDark) {
+                    html.removeAttribute('data-theme');
+                    localStorage.setItem('calcTheme', 'light');
+                    document.getElementById('themeToggle').innerHTML = '<i class="fas fa-moon"></i>';
+                } else {
+                    html.setAttribute('data-theme', 'dark');
+                    localStorage.setItem('calcTheme', 'dark');
+                    document.getElementById('themeToggle').innerHTML = '<i class="fas fa-sun"></i>';
+                }
+                this.showToast(isDark ? '☀️ Mode Terang' : '🌙 Mode Gelap');
+            }
+
+            loadTheme() {
+                const theme = localStorage.getItem('calcTheme');
+                const html = document.documentElement;
+                if (theme === 'dark') {
+                    html.setAttribute('data-theme', 'dark');
+                    document.getElementById('themeToggle').innerHTML = '<i class="fas fa-sun"></i>';
+                }
+            }
+
+            handleKeyDown(e) {
+                e.preventDefault();
+                
+                if (e.key >= '0' && e.key <= '9') {
+                    this.appendNumber(e.key);
+                } else if (e.key === '.') {
+                    this.inputDecimal();
+                } else if (e.key === '%') {
+                    this.calculatePercent();
+                } else if (['+', '-', '*', '/'].includes(e.key)) {
+                    this.selectOperation(e.key);
+                } else if (e.key === 'Enter' || e.key === '=') {
+                    this.equals();
+                } else if (e.key === 'Escape' || e.key.toLowerCase() === 'c') {
+                    this.clear();
+                } else if (e.key === 'Backspace') {
+                    this.delete();
+                }
+            }
+
+            showToast(message) {
+                let toast = document.querySelector('.toast');
+                if (toast) toast.remove();
+
+                toast = document.createElement('div');
+                toast.className = 'toast';
+                toast.textContent = message;
+                document.body.appendChild(toast);
+
+                setTimeout(() => toast.classList.add('show'), 50);
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                    setTimeout(() => toast.remove(), 400);
+                }, 2500);
+            }
+        }
+
+        // Initialize immediately
+        const calc = new PremiumCalculator();
+    </script>
+</body>
+</html>
